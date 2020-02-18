@@ -1,19 +1,159 @@
 <html>
   <head>
 <style>
-
+body{
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+nav{
+  display: flex;
+  justify-content: space-around;
+}
+.selected{
+  background-color: teal;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
 </style>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.js'></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.js'></script>
+    
     <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/react-router-dom/5.0.0/react-router-dom.js'></script>
+
+  
   </head>
   <body>
     <div id='root'></div>
     <script type='text/babel'>
-      const root = document.querySelector('#root');
-      ReactDOM.render(<hr />, root);
+
+    const API = "https://acme-users-api-rev.herokuapp.com/api"
+
+    // returns a promise for a 'logged-in' user
+    const fetchUser = async () => {
+         const storage = window.localStorage
+         const userId = storage.getItem("userId")
+          /* if (userId) {
+            try {
+              return (await axios.get(`${API}/users/${userId}`)).data
+            } catch (ex) {
+              storage.removeItem("userId")
+              return fetchUser()
+            }
+          }   */
+          //const user = (await axios.get(`${API}/users/random`)).data  // to be uncommented later
+          const user={"fullName":"Priscilla Waters ","id":"27240444-9468-4ca0-8758-cc21d87ad92a","firstName":"Priscilla","lastName":"Waters","middleName":"Lew","email":"Priscilla.Lew.Waters@me.com","title":"Senior Brand Liaison","avatar":"https://s3.amazonaws.com/uifaces/faces/twitter/omnizya/128.jpg","bio":"Priscilla is a dot-com systems sort of person. Vitae illo unde molestiae quas sapiente dicta incidunt minus quae. Waters sort of person. Minima rerum nihil est quia est.. Feel free to contact Priscilla Waters  at Priscilla.Lew.Waters@me.com. Ipsam sed aut officia nam labore velit accusamus at dolores. Amet esse culpa.","createdAt":"2020-02-15T00:32:16.484Z","updatedAt":"2020-02-15T00:32:16.484Z","companyId":"04676cb9-6291-4587-864f-b90266737fc0"};
+
+          const bookmarks = (await axios.get(`${API}/users/${user.id}/bookmarks`)).data
+          storage.setItem("userId", user.id)
+         
+          return user
+        }
+
+    
+    const {Component}= React;
+    const {render} = ReactDOM;
+    const { HashRouter, Route, Link, Switch, Redirect } = ReactRouterDOM
+
+     // this component should have some state to control what the user is typing
+      // and eventually use the create function that's passed down
+      // to create a note for a user!
+      // upon successfully creating the note,
+      // redirect them to the /notes page by using the history prop that's passed down
+      class Create extends Component {
+        constructor() {
+          super()
+          this.create = this.create.bind(this)
+        }
+        create(ev) {
+          console.log(ev)
+        }
+        render() {
+          return (
+            <div>
+              <input name='create-bookmark' placeholder='url'></input>
+              <input name='bookmark-category' placeholder='category'></input>
+              <button onClick={(ev) => this.create(ev)}>Create</button>
+            </div>
+          )
+        }
+      }
+
+      const Nav = ({ path,categories,addBookmark })=> {
+      console.log('Nav',path,categories);
+        return (
+            <div>
+              <nav>
+            { categories.map((category,idx)=>{
+              return(
+                <Link to={`/${category}`} key={idx} className= {path === `/${category}` ? '.selected':''}>      {category} 
+                </Link>
+              )
+            })
+          }
+          </nav>
+            <Create addBookmark={ addBookmark} history={ history } />
+          </div>
+        );
+      };      
+
+     
+
+    class App extends Component{
+      constructor(){
+        super();
+        this.state={
+          user:{},
+          bookmarks:[],
+          categories:[]
+        }
+      }
+      
+      async componentDidMount() {
+          const user = (await fetchUser());
+          const bookmarks = (await axios.get(`${API}/users/${user.id}/bookmarks`)).data
+          const categories =[...new Set(bookmarks.map(bookmark => bookmark.category))];
+          this.setState({ user, bookmarks,categories });
+         
+      }
+      render(){
+        const {user,bookmarks,categories} = this.state;
+        const addBookmark=(bookmark,history)=>{
+            this.setState({bookmarks:[...bookmarks,bookmark]});
+           // if(categories.include(category)){
+
+            }
+        return (
+            <div>
+              <HashRouter>
+              <Route render={({location}) => (<Nav path={location.pathname}  categories={categories} addBookmark={addBookmark}/>)} />
+              <h1>{user.fullName} ({bookmarks.length} Bookmarks)</h1>
+              <Switch >
+                <Route path={`:/filter`} />
+              </Switch>
+              </HashRouter>
+                <div>
+                  <ul>
+                  {
+                      bookmarks.map(item => {
+                      return (
+                        <li key={item.id}>
+                            <a href=''> {item.url} </a>
+                            <button onClick={() => destroy()}>destroy</button>
+                        </li>
+                        )  
+                    })
+                  }
+                  </ul>
+                </div>
+          </div>
+          );
+        }
+     }
+     const root = document.querySelector('#root');
+      render(<App />, root);
+     
     </script>
   </body>
 </html>
